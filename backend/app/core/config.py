@@ -1,13 +1,21 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 import os # Import os
+from pathlib import Path # Import Path
 from cryptography.fernet import Fernet # Import Fernet
+from dotenv import load_dotenv # Import load_dotenv
 
-# Remove the temporary key generation logic
-# DEFAULT_ENCRYPTION_KEY = os.getenv("SETTINGS_ENCRYPTION_KEY")
-# if not DEFAULT_ENCRYPTION_KEY:
-#     print("WARNING: SETTINGS_ENCRYPTION_KEY not found in environment. Generating a temporary key for development.")
-#     DEFAULT_ENCRYPTION_KEY = Fernet.generate_key().decode()
+# Calculate the path to the .env file relative to this config file
+_config_file_path = Path(__file__).resolve()
+_project_root = _config_file_path.parent.parent.parent # core -> app -> backend -> project root
+_env_path_absolute = _project_root / ".env"
+
+# Load the .env file if it exists
+if _env_path_absolute.exists():
+    load_dotenv(dotenv_path=_env_path_absolute)
+    print(f"[DEBUG] Loaded environment variables from: {_env_path_absolute}")
+else:
+    print(f"[WARNING] .env file not found at: {_env_path_absolute}, settings will rely on environment variables or defaults.")
 
 
 class Settings(BaseSettings):
@@ -33,7 +41,17 @@ class Settings(BaseSettings):
     TEXT_GEN_QUEUE_NAME: str = "text-gen-queue"
     AUDIO_GEN_QUEUE_NAME: str = "audio-gen-queue"
 
-    # Configure Pydantic to load from .env file in the parent directory
-    model_config = SettingsConfigDict(env_file="../.env", extra="ignore")
+    # We no longer explicitly need Pydantic to look for the file.
+    # `extra='ignore'` prevents errors if other env vars exist that aren't defined in Settings.
+    model_config = SettingsConfigDict(extra="ignore")
+
+# Remove the previous debugging prints as load_dotenv provides feedback
+# print(f"[DEBUG] Current Working Directory: {os.getcwd()}")
+# _env_path_str = "../../.env"
+# _absolute_env_path = Path(os.getcwd()) / _env_path_str
+# print(f"[DEBUG] Calculated .env path (relative): {_env_path_str}")
+# print(f"[DEBUG] Calculated .env path (absolute): {_absolute_env_path.resolve()}")
+# print(f"[DEBUG] Does .env exist at calculated path? {_absolute_env_path.exists()}")
+# < --- End Debugging prints ---
 
 settings = Settings() 

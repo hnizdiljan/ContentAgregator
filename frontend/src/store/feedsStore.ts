@@ -6,7 +6,7 @@ import { Article } from '../types/article';
 interface SubscriptionsState {
   subscriptions: UserFeedSubscription[];
   articles: Article[];
-  selectedFeedId: number | null;
+  selectedFeedIds: number[];
   loading: boolean;
   articlesLoading: boolean;
   error: string | null;
@@ -16,15 +16,21 @@ interface SubscriptionsState {
   unsubscribeFromFeed: (feedId: number) => Promise<void>;
   updateSubscriptionTitle: (feedId: number, payload: SubscriptionUpdatePayload) => Promise<void>;
   refreshFeed: (feedId: number) => Promise<void>;
-  fetchArticles: (feedId: number) => Promise<void>;
-  setSelectedFeedId: (feedId: number | null) => void;
+  fetchArticles: (feedIds: number[]) => Promise<void>;
+  setSelectedFeedIds: (feedIds: number[]) => void;
   updateArticleInList: (updatedArticle: Article) => void;
 }
+
+const sortArticlesDesc = (a: Article, b: Article) => {
+  const dateA = a.published_at ? new Date(a.published_at).getTime() : 0;
+  const dateB = b.published_at ? new Date(b.published_at).getTime() : 0;
+  return dateB - dateA;
+};
 
 export const useFeedsStore = create<SubscriptionsState>((set, get) => ({
   subscriptions: [],
   articles: [],
-  selectedFeedId: null,
+  selectedFeedIds: [],
   loading: false,
   articlesLoading: false,
   error: null,
@@ -56,8 +62,15 @@ export const useFeedsStore = create<SubscriptionsState>((set, get) => ({
   },
 
   unsubscribeFromFeed: async (feedId: number) => {
-    if (get().selectedFeedId === feedId) {
-      set({ selectedFeedId: null, articles: [], articlesError: null });
+    const currentSelectedIds = get().selectedFeedIds;
+    if (currentSelectedIds.includes(feedId)) {
+      const newSelectedIds = currentSelectedIds.filter(id => id !== feedId);
+      set({ selectedFeedIds: newSelectedIds });
+      if (newSelectedIds.length > 0) {
+        get().fetchArticles(newSelectedIds);
+      } else {
+        set({ articles: [], articlesError: null });
+      }
     }
     set({ loading: true, error: null });
     try {
@@ -87,32 +100,50 @@ export const useFeedsStore = create<SubscriptionsState>((set, get) => ({
     }
   },
 
-  setSelectedFeedId: (feedId: number | null) => {
-    set({ selectedFeedId: feedId });
-    if (feedId !== null) {
-      get().fetchArticles(feedId);
+  setSelectedFeedIds: (feedIds: number[]) => {
+    set({ selectedFeedIds: feedIds });
+    if (feedIds.length > 0) {
+      get().fetchArticles(feedIds);
     } else {
       set({ articles: [], articlesError: null });
     }
   },
 
   refreshFeed: async (feedId: number) => {
-    try {
-      await apiClient.post(`/feeds/${feedId}/refresh`);
-      if (get().selectedFeedId === feedId) {
-        await get().fetchArticles(feedId);
+    if (get().selectedFeedIds.includes(feedId)) {
+      set({ articlesLoading: true });
+      try {
+        await apiClient.post(`/feeds/${feedId}/refresh`);
+        await get().fetchArticles(get().selectedFeedIds);
+      } catch (err: any) {
+        console.error("Failed during feed refresh or article refetch:", err);
+        set({ articlesError: err?.response?.data?.detail || 'Failed to refresh feed or fetch articles' });
       }
-    } catch (err: any) {
-      console.error("Failed to trigger feed refresh:", err);
+    } else {
+      try {
+        await apiClient.post(`/feeds/${feedId}/refresh`);
+      } catch (err: any) {
+        console.error("Failed to trigger background feed refresh:", err);
+      }
     }
   },
 
-  fetchArticles: async (feedId: number) => {
+  fetchArticles: async (feedIds: number[]) => {
+    if (feedIds.length === 0) {
+      set({ articles: [], articlesLoading: false, articlesError: null });
+      return;
+    }
     set({ articlesLoading: true, articlesError: null });
     try {
-      const res = await apiClient.get<Article[]>(`/feeds/${feedId}/articles`);
-      set({ articles: res.data });
+      const params = new URLSearchParams();
+      feedIds.forEach(id => params.append('feed_ids', id.toString()));
+      const res = await apiClient.get<Article[]>(`/articles?${params.toString()}`);
+      
+      const sortedArticles = res.data.sort(sortArticlesDesc);
+      
+      set({ articles: sortedArticles });
     } catch (err: any) {
+      console.error("Error fetching articles for feeds:", feedIds, err);
       set({ articlesError: err?.response?.data?.detail || 'Failed to fetch articles' });
       set({ articles: [] });
     } finally {
@@ -124,7 +155,7 @@ export const useFeedsStore = create<SubscriptionsState>((set, get) => ({
     set(state => ({
       articles: state.articles.map(article =>
         article.id === updatedArticle.id ? updatedArticle : article
-      )
+      ).sort(sortArticlesDesc)
     }));
   },
 })); 

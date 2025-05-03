@@ -149,7 +149,7 @@ async def generate_audio_for_article(
         # Prepare parameters for the API call
         api_params = {
             "model": tts_model,
-            "voice": "nova",   # Changed voice to 'nova' for a more narrative style
+            "voice": "ash",   # Changed voice to 'nova' for a more narrative style
             "input": text_to_speak
             # Note: 'instructions' parameter is not currently documented for this endpoint.
             # Parameters like response_format and speed could be added if needed.

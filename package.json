@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "@ant-design/compatible": "^5.1.4"
+    "@ant-design/compatible": "^5.1.4",
+    "react-markdown": "^10.1.0"
   }
 }

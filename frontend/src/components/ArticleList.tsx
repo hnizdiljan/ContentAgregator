@@ -9,11 +9,11 @@ interface ArticleListProps {
   articles: Article[];
   loading: boolean;
   error: string | null;
-  feedTitle?: string | null;
+  feedDetailsMap: Record<number, { title: string; color: string }>;
   onArticleUpdate: (updatedArticle: Article) => void;
 }
 
-const ArticleList: React.FC<ArticleListProps> = ({ articles: initialArticles, loading, error, feedTitle, onArticleUpdate }) => {
+const ArticleList: React.FC<ArticleListProps> = ({ articles: initialArticles, loading, error, feedDetailsMap, onArticleUpdate }) => {
   const [articles, setArticles] = useState<Article[]>(initialArticles);
 
   useEffect(() => {
@@ -30,7 +30,7 @@ const ArticleList: React.FC<ArticleListProps> = ({ articles: initialArticles, lo
   }, [onArticleUpdate]);
 
   if (loading) {
-    return <Spin style={{ display: 'block', marginTop: 20 }} />;
+    return <Spin tip="Loading articles..." style={{ display: 'block', marginTop: 40, textAlign: 'center' }} />;
   }
 
   if (error) {
@@ -38,21 +38,26 @@ const ArticleList: React.FC<ArticleListProps> = ({ articles: initialArticles, lo
   }
 
   if (!Array.isArray(articles) || articles.length === 0) {
-    return <Text type="secondary" style={{ display: 'block', marginTop: 20, textAlign: 'center' }}>No articles found for this feed.</Text>;
+    return <Text type="secondary" style={{ display: 'block', marginTop: 40, textAlign: 'center' }}>No articles found for the selected feed(s).</Text>;
   }
 
   return (
-    <div style={{ marginTop: 24 }}>
-      {feedTitle && <Typography.Title level={4}>Articles from: {feedTitle}</Typography.Title>}
-      <List
-        itemLayout="vertical"
-        size="large"
-        dataSource={articles}
-        renderItem={item => (
-          <ArticleItem key={item.id} article={item} onUpdate={handleArticleUpdate} />
-        )}
-      />
-    </div>
+    <List
+      itemLayout="vertical"
+      size="large"
+      dataSource={articles}
+      renderItem={item => {
+        const feedDetails = feedDetailsMap[item.feed_id];
+        return (
+          <ArticleItem
+            key={item.id}
+            article={item}
+            onUpdate={handleArticleUpdate}
+            feedDetails={feedDetails}
+          />
+        );
+      }}
+    />
   );
 };
 

@@ -1,18 +1,23 @@
-fastapi[all]
+fastapi
 uvicorn[standard]
-python-dotenv
-requests # For fetching feed content and maybe OpenAI API
-feedparser # For parsing RSS/Atom feeds
+pydantic
+pydantic-settings
+sqlalchemy
+psycopg2-binary
+passlib[bcrypt]
+python-jose[cryptography]
+alembic
+openai>=1.0.0
+cryptography
+requests # Added for feedparser/fetching
+feedparser # Added for parsing RSS/Atom feeds
+celery[redis] # Added for background tasks
+apscheduler # Added for scheduled tasks
+python-multipart # For file uploads / form data
+python-dotenv # For loading .env files
+# Database driver (will add specific one later, e.g., pyodbc)
+# sqlalchemy[asyncio] # If using async SQLAlchemy
 beautifulsoup4 # For scraping article content
 lxml # Often needed by BeautifulSoup for parsing
 httpx # For async HTTP requests (needed for feed fetching service)
-# Database driver (will add specific one later, e.g., pyodbc)
-# sqlalchemy[asyncio] # If using async SQLAlchemy
-sqlalchemy
-alembic # For database migrations
-# OpenAI client
-openai>=1.0.0
-passlib[bcrypt] # For password hashing
-python-jose[cryptography] # For JWT tokens 
 fastapi-pagination 
-cryptography # For encrypting API keys 

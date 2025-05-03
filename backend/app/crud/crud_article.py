@@ -11,6 +11,17 @@ def get_articles_by_feed(db: Session, feed_id: int, skip: int = 0, limit: int = 
     """Retrieve articles for a specific feed with pagination."""
     return db.query(Article).filter(Article.feed_id == feed_id).order_by(Article.published_at.desc().nullslast(), Article.id.desc()).offset(skip).limit(limit).all()
 
+def get_multi_by_feed_ids(db: Session, *, feed_ids: List[int], skip: int = 0, limit: int = 100) -> List[Article]:
+    """Retrieve articles for a list of feed IDs with pagination, ordered by published date descending."""
+    if not feed_ids: # Pokud je seznam prázdný, vrátíme prázdný seznam článků
+        return []
+    return db.query(Article)\
+             .filter(Article.feed_id.in_(feed_ids))\
+             .order_by(Article.published_at.desc().nullslast(), Article.id.desc())\
+             .offset(skip)\
+             .limit(limit)\
+             .all()
+
 def get_article(db: Session, article_id: int) -> Optional[Article]:
     """Get a single article by its ID."""
     return db.query(Article).filter(Article.id == article_id).first()
