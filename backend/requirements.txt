@@ -1,0 +1,18 @@
+fastapi[all]
+uvicorn[standard]
+python-dotenv
+requests # For fetching feed content and maybe OpenAI API
+feedparser # For parsing RSS/Atom feeds
+beautifulsoup4 # For scraping article content
+lxml # Often needed by BeautifulSoup for parsing
+httpx # For async HTTP requests (needed for feed fetching service)
+# Database driver (will add specific one later, e.g., pyodbc)
+# sqlalchemy[asyncio] # If using async SQLAlchemy
+sqlalchemy
+alembic # For database migrations
+# OpenAI client
+openai>=1.0.0
+passlib[bcrypt] # For password hashing
+python-jose[cryptography] # For JWT tokens 
+fastapi-pagination 
+cryptography # For encrypting API keys 
